@@ -1,126 +1,140 @@
-# SaveGameCloud
+<p align="center">
+  <img src="docs/icon-256.png" width="112" alt="">
+</p>
 
-Launcher pour vieux jeux PC qui synchronise leurs sauvegardes dans **Google Drive**.
+<h1 align="center">SaveGameCloud</h1>
 
-1. Vous ajoutez un jeu en choisissant son **exécutable**, puis les **fichiers et dossiers** de sauvegarde à synchroniser.
-2. Avant chaque lancement, SaveGameCloud compare la sauvegarde locale à celle de Google Drive :
-   - **cloud plus récent** → téléchargement automatique, sans question ;
-   - **local plus récent** (ou modifié des deux côtés) → une fenêtre vous demande quelle version utiliser ;
-   - identique → lancement direct.
-3. À la fermeture du jeu, les fichiers sont envoyés dans Google Drive.
+<p align="center">
+  Lancez vos vieux jeux PC depuis SaveGameCloud : leurs sauvegardes sont synchronisées dans <b>votre</b> Google Drive.<br>
+  Reprenez votre partie sur n'importe quel PC.
+</p>
 
-Dans Drive, l'arborescence est la suivante : `Mon Drive / SaveGameCloud / <Nom du jeu> / …`.
+<p align="center">
+  <a href="https://github.com/Er4m3d/savegamecloud/releases/latest/download/SaveGameCloud.exe"><b>⬇ Télécharger SaveGameCloud.exe</b></a>
+  · <a href="https://er4m3d.github.io/savegamecloud/">Site</a>
+  · <a href="https://er4m3d.github.io/savegamecloud/privacy.html">Confidentialité</a>
+</p>
 
-**[⬇ Télécharger SaveGameCloud.exe](https://github.com/Er4m3d/savegamecloud/releases/latest/download/SaveGameCloud.exe)**
-(Windows 10/11 64 bits, fichier unique sans installation) · [Site](https://er4m3d.github.io/savegamecloud/) ·
-[Confidentialité](https://er4m3d.github.io/savegamecloud/privacy.html)
+Ce document s'adresse à deux publics différents :
 
-> L'exe n'est pas signé. Si Windows affiche « Windows a protégé votre ordinateur », cliquez sur
-> *Informations complémentaires*, puis sur *Exécuter quand même*.
+- **[Pour les joueurs](#pour-les-joueurs)** : télécharger l'appli, se connecter et jouer. Rien à configurer,
+  aucune connaissance technique nécessaire.
+- **[Pour les développeurs](#pour-les-développeurs)** : compiler le code, créer son propre identifiant Google et
+  comprendre le fonctionnement interne. Si vous voulez seulement utiliser l'appli, vous n'avez pas besoin de cette partie.
 
 ---
 
-## 1. Connexion (utilisateurs)
+# Pour les joueurs
 
-L'identifiant Google de l'application est intégré à `SaveGameCloud.exe`. L'utilisateur clique sur
-**Se connecter avec Google**, choisit son compte dans le navigateur et autorise l'accès. Il n'a rien d'autre à configurer.
-Ses sauvegardes vont dans **son** Google Drive.
+## 1. Installer
 
-## 2. Configuration Google (développeur, une seule fois)
+1. [Téléchargez **SaveGameCloud.exe**](https://github.com/Er4m3d/savegamecloud/releases/latest/download/SaveGameCloud.exe).
+   Il fonctionne sous Windows 10 ou 11 (64 bits).
+2. Rangez-le où vous voulez (par exemple dans `Documents`), puis double-cliquez dessus. Il n'y a **rien à installer**.
 
-Google impose que chaque application de bureau ait son propre identifiant OAuth. Comptez environ 5 minutes.
-C'est déjà fait pour l'exe officiel. Le fichier `client_secret.json` n'est **pas** dans ce dépôt : pour compiler
-votre propre version, créez votre propre identifiant en suivant ces étapes.
+> Si Windows affiche « Windows a protégé votre ordinateur », cliquez sur **Informations complémentaires**, puis sur
+> **Exécuter quand même**. Cet avertissement apparaît parce que l'exe n'est pas signé numériquement.
 
-1. Ouvrez <https://console.cloud.google.com/> et créez un projet (par ex. « SaveGameCloud »).
-2. **API et services → Bibliothèque** : recherchez **Google Drive API**, puis cliquez sur **Activer**.
-3. **Google Auth Platform → Branding** (ou « Écran de consentement OAuth ») :
-   - type d'utilisateur : **Externe** ;
-   - nom de l'application : SaveGameCloud, avec votre adresse e-mail en contact ;
-   - **Audience** : ajoutez votre adresse Gmail dans **Utilisateurs test**.
-   - *Conseil :* une fois que tout marche, passez l'application **en production** (onglet Audience → « Publier l'application »).
-     En mode « Test », Google oblige à se reconnecter tous les 7 jours. La portée utilisée (`drive.file`) ne demande pas
-     de validation par Google ; vous verrez seulement un avertissement « application non validée » à la connexion.
-4. **Clients → Créer un client** : type **Application de bureau**. Téléchargez le fichier JSON.
-5. Enregistrez ce fichier sous `src/SaveGameCloud.Core/client_secret.json`, puis recompilez : il est intégré à l'exe.
-   Le fichier est exclu de git par `.gitignore`. Sans ce fichier, la compilation affiche un avertissement et l'appli
-   propose d'importer un identifiant.
-6. Pour distribuer l'appli, passez-la **en production** (Audience → « Publier l'application »). En mode test, seuls
-   les utilisateurs test peuvent se connecter (100 au maximum), et ils doivent se reconnecter tous les 7 jours.
+## 2. Se connecter à Google
 
-Pour remplacer l'identifiant intégré sans recompiler, posez un `client_secret.json` à côté de `SaveGameCloud.exe`
-ou importez-le depuis l'appli : un fichier présent est toujours prioritaire.
+Cliquez sur **Se connecter avec Google**. Votre navigateur s'ouvre : choisissez votre compte et autorisez l'accès.
+C'est tout, il n'y a rien d'autre à configurer.
 
-> L'identifiant d'une application de bureau n'est pas un vrai secret : Google prévoit qu'il soit livré dans l'exe.
-> Si quelqu'un en abuse, créez-en un nouveau dans la console, supprimez l'ancien et publiez une nouvelle version.
+- Vos sauvegardes vont dans **votre** Google Drive, dans un dossier `SaveGameCloud`.
+- L'appli ne voit **que les fichiers qu'elle a créés elle-même**. Elle n'a pas accès au reste de votre Drive.
+- La connexion est mémorisée : vous n'aurez pas à la refaire à chaque lancement.
 
-> La portée `drive.file` ne donne accès **qu'aux fichiers créés par SaveGameCloud**. L'application ne voit pas
-> le reste de votre Drive.
+## 3. Ajouter un jeu
 
-## 3. Utilisation
+1. Cliquez sur **＋ Ajouter un jeu**, puis choisissez l'exécutable du jeu (le `.exe` qui le lance).
+2. Vérifiez le **nom du jeu**. C'est aussi le nom du dossier dans Google Drive.
+3. Ajoutez les **fichiers et dossiers de sauvegarde** avec *Ajouter des fichiers…* ou *Ajouter un dossier…*.
+4. Cliquez sur **Enregistrer**.
 
-| Action | Effet |
-|---|---|
-| **Ajouter un jeu** | Choisissez l'exécutable (`.exe`, `.bat`, `.cmd`, `.lnk`), puis ajoutez les fichiers et dossiers de sauvegarde. |
-| **▶ Jouer** (ou double-clic) | Synchronisation, lancement, attente de la fermeture du jeu, puis envoi. |
-| **Raccourci bureau** | Crée un raccourci qui lance le jeu *avec* la synchronisation, sans ouvrir la fenêtre principale. |
-| **Envoyer vers le cloud / Récupérer depuis le cloud** | Synchronisation manuelle forcée, dans un sens ou dans l'autre. |
-| **Sauvegardes de secours** | Ouvre le dossier des copies faites avant chaque téléchargement (les 10 dernières par jeu). |
+**Où se trouvent les sauvegardes d'un vieux jeu ?** Le plus souvent :
 
-### Plusieurs PC
-Sur chaque PC, ajoutez le jeu avec **exactement le même nom** et les mêmes éléments : le dossier Drive est retrouvé
-par son nom. Les chemins sont enregistrés de façon portable : `{GameDir}` (dossier de l'exécutable), `{Documents}`,
-`{SavedGames}`, `{AppData}`, `{LocalAppData}`, `{LocalLow}`, `{UserProfile}`, `{ProgramData}`, `{PublicDocuments}`.
-Un jeu installé dans `C:\Jeux` sur un PC et dans `D:\Games` sur un autre fonctionne donc sans rien changer.
+- dans le dossier du jeu, sous un nom comme `SAVE`, `Saves` ou dans des fichiers `*.sav` ;
+- dans `Documents\My Games\…` ou dans `Saved Games` ;
+- dans `%APPDATA%` ou `%LOCALAPPDATA%`. Pour un jeu installé dans `Program Files`, regardez aussi dans
+  `%LOCALAPPDATA%\VirtualStore`.
 
-### Où trouver les sauvegardes d'un vieux jeu ?
-Le plus souvent dans le dossier du jeu (`SAVE`, `Saves`, `*.sav`), dans `Documents\My Games\…`, dans
-`Saved Games`, dans `%APPDATA%` ou dans `%LOCALAPPDATA%\VirtualStore\…` pour les jeux installés dans
-`Program Files`. Le site <https://www.pcgamingwiki.com> indique l'emplacement pour la plupart des jeux.
+Le site [PCGamingWiki](https://www.pcgamingwiki.com) indique l'emplacement exact pour la plupart des jeux.
 
-## 4. Comment les versions sont comparées
+> Choisissez le dossier des sauvegardes, pas le dossier entier du jeu : sinon, tout le jeu serait envoyé dans votre
+> Drive à chaque partie. L'appli vous prévient si un élément dépasse 200 Mo ou 2 000 fichiers.
 
-- Les fichiers sont comparés par **empreinte MD5**. Si tout est identique, rien n'est transféré.
-- Sinon, seules les dates de modification **des fichiers qui diffèrent** sont comparées : la plus récente,
-  côté local et côté cloud (marge de 2 s).
-  - cloud plus récent → téléchargement automatique ;
-  - local plus récent ou dates équivalentes → on vous demande.
-- Un téléchargement fait du dossier local un **miroir** du cloud : les fichiers absents du cloud sont supprimés.
-  Les fichiers locaux sont d'abord copiés dans les sauvegardes de secours.
-- Un envoi fait du cloud un miroir du local. Les fichiers supprimés dans Drive vont dans la **corbeille Drive**,
-  donc ils restent récupérables.
-- Le jeu est lancé dans un *job* Windows : SaveGameCloud attend la fermeture du jeu **et** de ses processus enfants,
-  ce qui gère les jeux qui passent par un petit lanceur.
-- Si la vérification n'a pas pu se faire avant la partie (hors ligne, par exemple), l'envoi à la fin de la partie
-  vous est demandé au lieu d'être automatique, pour ne jamais écraser une sauvegarde cloud plus récente.
+## 4. Jouer
 
-### Garde-fous de taille
+Cliquez sur **▶ Jouer**, ou double-cliquez sur le jeu dans la liste.
 
-La taille n'est pas plafonnée : les fichiers vont dans le Drive de l'utilisateur et l'API Drive ne facture rien.
-Une sauvegarde est considérée comme **volumineuse** à partir de **200 Mo ou 2 000 fichiers**. Dans ce cas :
+1. **Avant la partie**, SaveGameCloud compare votre sauvegarde à celle de Google Drive :
+   - si celle du **cloud est plus récente**, elle est téléchargée automatiquement ;
+   - si celle de **ce PC est plus récente**, une fenêtre vous demande laquelle garder ;
+   - si elles sont **identiques**, le jeu se lance directement.
+2. **Le jeu se lance.** L'appli se réduit et attend que vous quittiez le jeu.
+3. **À la fermeture du jeu**, votre sauvegarde est envoyée dans Google Drive.
 
-- un avertissement s'affiche quand on ajoute l'élément, et le total est affiché en rouge dans la fenêtre du jeu ;
-- avant un envoi, une confirmation est demandée si la sauvegarde n'a jamais été synchronisée à cette taille,
-  c'est-à-dire si c'est le premier envoi ou si elle a plus que doublé ;
-- si le Google Drive est plein, un message explique quoi faire, et l'appli ne propose pas de réessayer en boucle.
+**Raccourci bureau** : le bouton *Raccourci bureau* crée sur le bureau une icône qui lance le jeu avec la
+synchronisation, sans passer par la fenêtre de SaveGameCloud.
 
-Les seuils se trouvent dans `src/SaveGameCloud.Core/Sync/SizeGuard.cs`.
+## 5. Jouer sur plusieurs PC
 
-## 5. Fichiers de l'application
+Sur chaque PC, installez SaveGameCloud, connectez-vous avec **le même compte Google**, puis ajoutez le jeu avec
+**exactement le même nom** et les mêmes fichiers de sauvegarde. SaveGameCloud retrouve alors la sauvegarde dans le cloud.
 
-Tout est rangé dans `%APPDATA%\SaveGameCloud` :
+Le jeu peut être installé à un endroit différent sur chaque PC (par exemple `C:\Jeux` sur l'un et `D:\Games` sur
+l'autre) : l'appli s'adapte.
 
-| Élément | Rôle |
-|---|---|
-| `config.json` | Liste des jeux |
-| `client_secret.json` | Identifiant OAuth importé (facultatif, remplace celui intégré) |
-| `google-token\` | Jeton de connexion Google (supprimé à la déconnexion) |
-| `Backups\<jeu>\<date>\` | Copies de secours avant téléchargement |
-| `logs\` | Journal, utile en cas de problème |
+## 6. Si quelque chose tourne mal
 
-## 6. Compiler
+- **Copies de secours** : avant de remplacer vos fichiers par ceux du cloud, SaveGameCloud fait une copie des
+  fichiers de ce PC. Le bouton *Sauvegardes de secours* ouvre le dossier qui les contient (les 10 dernières par jeu).
+- **Fichiers supprimés du cloud** : ils partent dans la **corbeille de Google Drive**. Vous pouvez donc les récupérer.
+- **Synchronisation manuelle** : les boutons *Envoyer vers le cloud* et *Récupérer depuis le cloud* forcent la
+  synchronisation dans un sens ou dans l'autre.
+- **Sans internet** : le jeu peut quand même se lancer. À la fin de la partie, l'appli vous demande si elle doit
+  envoyer la sauvegarde. Elle ne remplace jamais en silence une sauvegarde du cloud qu'elle n'a pas pu vérifier.
+- **Google Drive plein** : un message vous l'indique. Libérez de l'espace, puis cliquez sur *Envoyer vers le cloud*.
 
-Prérequis : SDK .NET 10.
+## 7. Limites
+
+- Si un jeu passe par **Steam, GOG Galaxy** ou un autre lanceur déjà ouvert, SaveGameCloud ne peut pas savoir
+  quand vous le quittez. Choisissez directement l'exécutable du jeu.
+- Un fichier que vous déposez **à la main** dans le dossier Drive, depuis le site de Google Drive, est ignoré :
+  l'appli ne voit que les fichiers qu'elle a envoyés elle-même.
+
+## 8. Vos données et la désinstallation
+
+- **Sur votre PC**, SaveGameCloud range ses réglages dans `%APPDATA%\SaveGameCloud` : la liste des jeux, la
+  connexion Google et les copies de secours.
+- **Dans Google Drive**, vos sauvegardes sont dans le dossier `SaveGameCloud`.
+- **Le développeur ne reçoit aucune de vos données.** Il n'y a aucun serveur intermédiaire. Pour les détails,
+  voir les [règles de confidentialité](https://er4m3d.github.io/savegamecloud/privacy.html).
+
+**Pour désinstaller** :
+
+1. cliquez sur **Se déconnecter** dans l'appli ;
+2. supprimez `SaveGameCloud.exe` et le dossier `%APPDATA%\SaveGameCloud` ;
+3. si vous voulez aussi effacer vos sauvegardes du cloud, supprimez le dossier `SaveGameCloud` de votre Google Drive.
+
+Vous pouvez aussi retirer l'accès de l'appli depuis [myaccount.google.com/permissions](https://myaccount.google.com/permissions).
+
+**Une question ?** Écrivez à [savegamecloud-support@googlegroups.com](mailto:savegamecloud-support@googlegroups.com).
+
+---
+
+# Pour les développeurs
+
+Cette partie sert uniquement à compiler votre propre version de SaveGameCloud. Pour simplement utiliser l'appli,
+voir [Pour les joueurs](#pour-les-joueurs).
+
+## Prérequis
+
+- Windows 10 ou 11
+- [SDK .NET 10](https://dotnet.microsoft.com/download)
+- Python 3 avec Pillow, uniquement pour régénérer l'icône
+
+## Compiler et tester
 
 ```bash
 dotnet test
@@ -130,19 +144,113 @@ dotnet test
 dotnet publish src/SaveGameCloud -c Release -o publish
 ```
 
-La publication produit un `publish\SaveGameCloud.exe` autonome, qui ne nécessite pas d'installer .NET.
+La publication produit un `publish\SaveGameCloud.exe` autonome : un seul fichier, qui ne nécessite pas d'installer .NET.
 
-Structure du code :
+## Identifiant Google (OAuth)
 
-- `src/SaveGameCloud.Core` : modèles, comparaison et synchronisation (`Sync/SyncEngine.cs`), Google Drive
-  (`Cloud/`), lancement et attente du jeu (`Launch/`).
-- `src/SaveGameCloud` : interface WPF.
-- `tests/SaveGameCloud.Tests` : tests de la synchronisation avec un faux Drive en mémoire, et test du lanceur.
+L'exe officiel contient l'identifiant OAuth du projet SaveGameCloud. Le fichier `client_secret.json` correspondant
+n'est **pas** dans ce dépôt : pour votre propre version, vous devez créer votre propre identifiant. Comptez environ 5 minutes.
 
-## Limites connues
+1. Ouvrez la [console Google Cloud](https://console.cloud.google.com/) et créez un projet.
+2. **API et services → Bibliothèque** : activez **Google Drive API**.
+3. **Google Auth Platform → Branding** : type d'utilisateur **Externe**, nom de l'application et e-mail d'assistance.
+   Dans **Audience**, ajoutez votre adresse dans **Utilisateurs test**.
+4. **Clients → Créer un client** : choisissez le type **Application de bureau**, puis téléchargez le JSON.
+5. Enregistrez-le sous `src/SaveGameCloud.Core/client_secret.json`, puis recompilez.
+   - Ce fichier est intégré à l'exe comme ressource et reste exclu de git par `.gitignore`.
+   - Sans lui, la compilation affiche un avertissement, et l'appli propose d'importer un identifiant au premier lancement.
+6. Pour distribuer l'appli, passez-la **en production** (Audience → « Publier l'application »). Google demande pour
+   cela une page d'accueil, des règles de confidentialité publiques et un domaine autorisé. Le dossier `docs/` de ce
+   dépôt, publié avec GitHub Pages, remplit ce rôle.
+   - En mode test, seuls 100 utilisateurs test au maximum peuvent se connecter, et ils doivent se reconnecter tous les 7 jours.
+   - La portée `drive.file` n'est pas sensible : pas de validation Google, tant que vous n'ajoutez pas de logo.
 
-- Les jeux lancés via Steam, GOG Galaxy ou un autre lanceur qui confie le jeu à un service déjà ouvert ne
-  peuvent pas être suivis jusqu'à leur fermeture. Pointez directement vers l'exécutable du jeu.
-- Seuls les fichiers envoyés par SaveGameCloud sont visibles par l'application, à cause de la portée `drive.file`.
-  Un fichier déposé à la main dans le dossier Drive via le site web sera ignoré.
-- Les dossiers vides ne sont pas recréés.
+Un `client_secret.json` posé à côté de l'exe ou dans `%APPDATA%\SaveGameCloud` est **prioritaire** sur celui
+intégré : on peut ainsi changer d'identifiant sans recompiler.
+
+> L'identifiant d'une application de bureau n'est pas un vrai secret : Google prévoit qu'il soit livré dans l'exe.
+> En cas d'abus, créez-en un nouveau, supprimez l'ancien dans la console et publiez une nouvelle version.
+
+## Structure du code
+
+| Dossier | Contenu |
+|---|---|
+| `src/SaveGameCloud.Core/Sync` | Analyse local/cloud, téléchargement, envoi (`SyncEngine`), copies de secours, garde-fous de taille (`SizeGuard`) |
+| `src/SaveGameCloud.Core/Cloud` | Connexion Google (`GoogleAuthService`) et stockage Drive (`GoogleDriveStorage`) |
+| `src/SaveGameCloud.Core/Launch` | Lancement du jeu et attente de sa fermeture (`GameLauncher`), déroulé complet d'une partie (`LaunchCoordinator`) |
+| `src/SaveGameCloud.Core/Infrastructure` | Configuration, chemins portables (`PathTokens`), journal |
+| `src/SaveGameCloud` | Interface WPF |
+| `tests/SaveGameCloud.Tests` | Tests, avec un faux Google Drive en mémoire |
+| `docs/` | Site GitHub Pages : accueil et règles de confidentialité |
+| `tools/make_icon.py` | Génère l'icône et le favicon |
+
+## Fonctionnement interne
+
+**Comparaison local / cloud**
+- Les fichiers sont d'abord comparés par **empreinte MD5**. S'ils sont tous identiques, rien n'est transféré.
+- Sinon, on compare la date de modification la plus récente **parmi les fichiers qui diffèrent**, côté local et
+  côté cloud, avec une marge de 2 s :
+  - cloud plus récent → téléchargement automatique ;
+  - local plus récent ou dates équivalentes → l'utilisateur choisit.
+- La date de chaque fichier est conservée dans Drive (`modifiedTime`) et restaurée au téléchargement.
+
+**Miroir**
+- Un téléchargement fait du local un miroir du cloud. Les fichiers locaux remplacés ou supprimés sont d'abord
+  copiés dans `Backups\`.
+- Un envoi fait du cloud un miroir du local. Les fichiers retirés du cloud sont mis à la corbeille Drive.
+- Seuls les fichiers qui correspondent à un élément configuré sont gérés. Les autres fichiers du dossier Drive
+  ne sont jamais touchés.
+
+**Attente de la fermeture du jeu**
+- Le jeu est lancé suspendu, placé dans un *Job Object* Windows, puis relancé. SaveGameCloud attend ensuite que
+  le processus principal **et** tous ses descendants soient terminés.
+- Si le jeu exige les droits administrateur, il est relancé via UAC, et l'appli surveille alors seulement le processus principal.
+
+**Chemins portables**
+- Les chemins sont enregistrés avec des jetons qui s'adaptent à chaque PC : `{GameDir}` (dossier de l'exécutable),
+  `{Documents}`, `{SavedGames}`, `{AppData}`, `{LocalAppData}`, `{LocalLow}`, `{UserProfile}`, `{ProgramData}`,
+  `{PublicDocuments}`.
+
+**Garde-fous de taille**
+- La taille n'est pas plafonnée. En revanche, une sauvegarde est jugée volumineuse à partir de **200 Mo ou
+  2 000 fichiers** (seuils dans `SizeGuard.cs`) :
+  - un avertissement s'affiche à l'ajout de l'élément ;
+  - avant un envoi, une confirmation est demandée si la sauvegarde n'a jamais été synchronisée à cette taille
+    (premier envoi, ou taille plus que doublée).
+- L'erreur Drive `storageQuotaExceeded` est traduite en message clair, sans proposer de réessayer.
+
+**Lancement depuis un raccourci**
+- La commande `SaveGameCloud.exe --launch <id>` synchronise, lance le jeu puis se ferme.
+- Un sémaphore nommé empêche de lancer deux fois le même jeu.
+- La configuration est relue et écrite sous un mutex, car plusieurs instances de l'appli peuvent tourner en même temps.
+
+**Fichiers locaux** (`%APPDATA%\SaveGameCloud`)
+
+| Élément | Rôle |
+|---|---|
+| `config.json` | Liste des jeux et état de la dernière synchronisation |
+| `client_secret.json` | Identifiant OAuth importé (facultatif, prioritaire sur celui intégré) |
+| `google-token\` | Jeton de connexion Google, supprimé à la déconnexion |
+| `Backups\<jeu>\<date>\` | Copies de secours faites avant un téléchargement |
+| `logs\` | Journal mensuel |
+
+## Icône
+
+```bash
+python tools/make_icon.py
+```
+
+Le script régénère `src/SaveGameCloud/Assets/app.ico` (16 à 256 px), `app-256.png`, ainsi que `docs/icon-256.png`
+et `docs/favicon.ico`.
+
+## Publier une version
+
+1. Incrémentez `<Version>` dans `src/SaveGameCloud/SaveGameCloud.csproj`.
+2. Lancez `dotnet test`, puis `dotnet publish src/SaveGameCloud -c Release -o publish`, avec le
+   `client_secret.json` en place.
+3. Créez une release GitHub (tag `vX.Y.Z`) et joignez-y `publish\SaveGameCloud.exe`. Le lien de téléchargement
+   `releases/latest/download/SaveGameCloud.exe` pointe automatiquement vers la dernière version.
+
+## Licence
+
+[MIT](LICENSE)
