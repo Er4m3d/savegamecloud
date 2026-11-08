@@ -19,6 +19,7 @@
             <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
             <Setter Property="FontFamily" Value="Segoe UI"/>
             <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Icon" Value="pack://application:,,,/Assets/app.ico"/>
         </Style>
 
         <Style TargetType="TextBlock">

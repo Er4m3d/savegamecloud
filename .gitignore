@@ -5,3 +5,4 @@ publish/
 *.user
 # Identifiants OAuth Google : ne jamais les commiter
 client_secret*.json
+tools/icon-preview.png

@@ -23,7 +23,8 @@
                     <Button x:Name="SignOutButton" Content="Se déconnecter" Click="SignOut_Click" Margin="0" Visibility="Collapsed"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="☁" FontSize="24" Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="0,0,10,0"/>
+                    <Image Source="pack://application:,,,/Assets/app-256.png" Width="36" Height="36" VerticalAlignment="Center" Margin="0,0,12,0"
+                           RenderOptions.BitmapScalingMode="HighQuality"/>
                     <StackPanel>
                         <TextBlock Text="SaveGameCloud" FontSize="18" FontWeight="SemiBold"/>
                         <TextBlock Text="Vos sauvegardes de jeux, synchronisées dans Google Drive" Style="{StaticResource Subtle}" FontSize="12"/>
