@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Confidentialité – SaveGameCloud</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main>
+    <p><a href="index.html">← SaveGameCloud</a></p>
+    <h1>Règles de confidentialité</h1>
+    <p class="muted">Dernière mise à jour : 8 novembre 2026</p>
+
+    <p>SaveGameCloud est une application Windows qui synchronise les fichiers de sauvegarde de vos jeux avec votre
+      propre compte Google Drive. Cette page explique quelles données l'application utilise, comment et pourquoi.</p>
+
+    <h2>1. Données consultées</h2>
+    <ul>
+      <li><strong>Votre compte Google :</strong> votre nom et votre adresse e-mail, uniquement pour afficher dans
+        l'application le compte connecté.</li>
+      <li><strong>Google Drive :</strong> l'application demande la permission <code>drive.file</code>. Avec cette
+        permission, elle ne peut lire et modifier que les fichiers et dossiers qu'elle a elle-même créés, rangés dans
+        le dossier <code>SaveGameCloud</code> de votre Drive. Elle n'a pas accès à vos autres fichiers.</li>
+      <li><strong>Fichiers locaux :</strong> seulement les fichiers et dossiers de sauvegarde que vous avez choisis
+        pour chaque jeu.</li>
+    </ul>
+
+    <h2>2. Utilisation de ces données</h2>
+    <p>Elles servent uniquement à copier vos sauvegardes de jeux entre votre PC et votre Google Drive, et à comparer
+      les deux versions pour savoir laquelle est la plus récente. Elles ne sont jamais utilisées à des fins
+      publicitaires, de profilage ou de statistiques.</p>
+
+    <h2>3. Stockage et partage</h2>
+    <ul>
+      <li>SaveGameCloud n'a <strong>aucun serveur</strong> : l'application communique directement avec Google depuis
+        votre PC. Le développeur ne reçoit, ne stocke et ne consulte aucune de vos données.</li>
+      <li>Vos sauvegardes sont stockées dans votre Google Drive, sous votre seul contrôle.</li>
+      <li>Votre jeton de connexion Google, la liste de vos jeux et les copies de secours restent sur votre PC, dans
+        <code>%APPDATA%\SaveGameCloud</code>.</li>
+      <li>Aucune donnée n'est vendue ni transmise à des tiers.</li>
+    </ul>
+
+    <h2>4. Conformité avec les règles de Google</h2>
+    <p>L'utilisation et le transfert vers toute autre application des informations reçues des API Google par
+      SaveGameCloud respectent les
+      <a href="https://developers.google.com/terms/api-services-user-data-policy">Règles relatives aux données
+      utilisateur des services d'API Google</a>, y compris les exigences d'utilisation limitée (Limited Use).</p>
+
+    <h2>5. Vos choix</h2>
+    <ul>
+      <li><strong>Déconnexion :</strong> le bouton « Se déconnecter » révoque l'accès et supprime le jeton
+        enregistré sur votre PC.</li>
+      <li>Vous pouvez aussi retirer l'accès à tout moment depuis
+        <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>.</li>
+      <li>Pour effacer vos sauvegardes, supprimez le dossier <code>SaveGameCloud</code> de votre Google Drive et le
+        dossier <code>%APPDATA%\SaveGameCloud</code> de votre PC.</li>
+    </ul>
+
+    <h2>6. Contact</h2>
+    <p>Pour toute question sur ces règles :
+      <a href="mailto:savegamecloud-support@googlegroups.com">savegamecloud-support@googlegroups.com</a></p>
+  </main>
+</body>
+</html>
