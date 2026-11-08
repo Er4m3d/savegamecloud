@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/SaveGameCloud.Core/SaveGameCloud.Core.csproj" />
+    <Project Path="src/SaveGameCloud/SaveGameCloud.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/SaveGameCloud.Tests/SaveGameCloud.Tests.csproj" />
+  </Folder>
+</Solution>

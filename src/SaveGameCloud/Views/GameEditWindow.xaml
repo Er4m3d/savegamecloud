@@ -1,0 +1,58 @@
+<Window x:Class="SaveGameCloud.Views.GameEditWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Jeu" Height="600" Width="760" MinHeight="480" MinWidth="620"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="False" Style="{StaticResource AppWindow}">
+    <DockPanel Margin="22">
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Annuler" IsCancel="True"/>
+            <Button x:Name="SaveButton" Content="Enregistrer" Style="{StaticResource AccentButton}" IsDefault="True" Margin="0" Click="Save_Click"/>
+        </StackPanel>
+        <TextBlock x:Name="SizeText" DockPanel.Dock="Bottom" Style="{StaticResource Subtle}" FontSize="12" Margin="2,8,0,0" TextWrapping="Wrap"/>
+
+        <StackPanel DockPanel.Dock="Top">
+            <TextBlock x:Name="HeaderText" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,14"/>
+
+            <TextBlock Text="NOM DU JEU" Style="{StaticResource SectionTitle}"/>
+            <TextBox x:Name="NameBox"/>
+            <TextBlock Style="{StaticResource Subtle}" FontSize="11" Margin="0,4,0,12" TextWrapping="Wrap"
+                       Text="Ce nom est aussi celui du dossier Google Drive. Utilisez exactement le même nom sur vos autres PC pour retrouver les sauvegardes."/>
+
+            <TextBlock Text="EXÉCUTABLE (étape 1)" Style="{StaticResource SectionTitle}"/>
+            <DockPanel>
+                <Button DockPanel.Dock="Right" Content="Parcourir…" Margin="8,0,0,0" Click="BrowseExe_Click"/>
+                <TextBox x:Name="ExeBox" TextChanged="ExeBox_TextChanged"/>
+            </DockPanel>
+
+            <TextBlock Text="ARGUMENTS (optionnel)" Style="{StaticResource SectionTitle}" Margin="0,12,0,6"/>
+            <TextBox x:Name="ArgsBox"/>
+
+            <DockPanel Margin="0,18,0,6">
+                <TextBlock Text="FICHIERS ET DOSSIERS À SYNCHRONISER (étape 2)" Style="{StaticResource SectionTitle}" VerticalAlignment="Bottom" Margin="0"/>
+            </DockPanel>
+            <WrapPanel Margin="0,0,0,8">
+                <Button Content="📄  Ajouter des fichiers…" Click="AddFiles_Click"/>
+                <Button Content="📁  Ajouter un dossier…" Click="AddFolder_Click"/>
+                <Button x:Name="RemoveButton" Content="Retirer" Style="{StaticResource DangerButton}" Click="Remove_Click" IsEnabled="False"/>
+            </WrapPanel>
+        </StackPanel>
+
+        <Border Background="{StaticResource PanelAltBrush}" CornerRadius="6" Padding="6">
+            <Grid>
+                <ListBox x:Name="ItemsList" SelectionMode="Extended" SelectionChanged="ItemsList_SelectionChanged">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate>
+                            <DockPanel>
+                                <TextBlock Text="{Binding Glyph}" Width="22" DockPanel.Dock="Left"/>
+                                <TextBlock Text="{Binding CloudName}" FontWeight="SemiBold" Width="170" TextTrimming="CharacterEllipsis" DockPanel.Dock="Left"/>
+                                <TextBlock Text="{Binding LocalPath}" Foreground="{Binding PathBrush}" TextTrimming="CharacterEllipsis" ToolTip="{Binding LocalPath}"/>
+                            </DockPanel>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock x:Name="EmptyText" Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="8" VerticalAlignment="Center" TextAlignment="Center"
+                           Text="Ajoutez les fichiers et dossiers de sauvegarde du jeu.&#x0a;Ils sont souvent dans le dossier du jeu, dans Documents, Documents\My Games, Saved Games ou %APPDATA%."/>
+            </Grid>
+        </Border>
+    </DockPanel>
+</Window>

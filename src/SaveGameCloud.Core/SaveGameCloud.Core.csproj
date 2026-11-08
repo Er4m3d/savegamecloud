@@ -1,0 +1,25 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Google.Apis.Drive.v3" Version="1.78.0.4313" />
+  </ItemGroup>
+
+  <!--
+    Identifiant OAuth « Application de bureau » du projet Google, intégré à l'exe pour que les
+    utilisateurs n'aient qu'à se connecter. Le fichier n'est pas versionné (.gitignore) : sans lui,
+    l'appli compile quand même et propose d'importer un client_secret.json.
+  -->
+  <ItemGroup>
+    <EmbeddedResource Include="client_secret.json" Condition="Exists('client_secret.json')" LogicalName="SaveGameCloud.client_secret.json" />
+  </ItemGroup>
+  <Target Name="WarnMissingClientSecret" BeforeTargets="Build" Condition="!Exists('client_secret.json')">
+    <Warning Text="src/SaveGameCloud.Core/client_secret.json absent : l'identifiant Google ne sera pas intégré, les utilisateurs devront l'importer." />
+  </Target>
+
+</Project>

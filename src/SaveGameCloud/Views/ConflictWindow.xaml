@@ -1,0 +1,42 @@
+<Window x:Class="SaveGameCloud.Views.ConflictWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Quelle sauvegarde utiliser ?" SizeToContent="Height" Width="560" ResizeMode="NoResize"
+        WindowStartupLocation="CenterOwner" ShowInTaskbar="True" Topmost="True" Style="{StaticResource AppWindow}">
+    <StackPanel Margin="24">
+        <TextBlock x:Name="HeaderText" FontSize="18" FontWeight="SemiBold" TextWrapping="Wrap"/>
+        <TextBlock Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="0,8,0,18"
+                   Text="La sauvegarde de ce PC est plus récente que celle de Google Drive (ou les deux ont été modifiées). Choisissez celle à utiliser pour cette partie."/>
+
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition/>
+                <ColumnDefinition Width="12"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <Border Grid.Column="0" Background="{StaticResource PanelAltBrush}" CornerRadius="8" Padding="14">
+                <StackPanel>
+                    <TextBlock Text="💻  CE PC" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock x:Name="LocalDate" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="LocalDetails" Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+            <Border Grid.Column="2" Background="{StaticResource PanelAltBrush}" CornerRadius="8" Padding="14">
+                <StackPanel>
+                    <TextBlock Text="☁  GOOGLE DRIVE" Style="{StaticResource SectionTitle}"/>
+                    <TextBlock x:Name="CloudDate" FontSize="15" FontWeight="SemiBold"/>
+                    <TextBlock x:Name="CloudDetails" Style="{StaticResource Subtle}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <TextBlock Style="{StaticResource Subtle}" FontSize="11" TextWrapping="Wrap" Margin="0,14,0,0"
+                   Text="« Utiliser le cloud » remplace les fichiers locaux (une copie de secours est faite avant). « Garder ce PC » lance le jeu tel quel ; la sauvegarde cloud sera remplacée à la fermeture du jeu."/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button Content="Annuler le lancement" IsCancel="True" Click="Cancel_Click"/>
+            <Button Content="☁  Utiliser le cloud" Click="UseCloud_Click"/>
+            <Button Content="💻  Garder ce PC" Style="{StaticResource AccentButton}" IsDefault="True" Margin="0" Click="UseLocal_Click"/>
+        </StackPanel>
+    </StackPanel>
+</Window>
