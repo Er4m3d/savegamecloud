@@ -15,6 +15,7 @@ public sealed class GoogleDriveStorage(DriveService drive) : ICloudStorage
     public const string RootFolderName = "SaveGameCloud";
     internal const string FolderMime = "application/vnd.google-apps.folder";
     internal const string InfoFileName = ".savegamecloud.json";
+    internal const string LibraryFileName = ".savegamecloud-library.json";
 
     private string? _rootId;
 
@@ -41,6 +42,34 @@ public sealed class GoogleDriveStorage(DriveService drive) : ICloudStorage
             throw new InvalidOperationException($"Un dossier « {newName} » existe déjà dans Google Drive.");
         await drive.Files.Update(new DriveFile { Name = newName }, folder.Id).ExecuteAsync(ct).ConfigureAwait(false);
         return true;
+    }
+
+    public async Task<Library.LibraryDocument?> ReadLibraryAsync(CancellationToken ct)
+    {
+        var rootId = await GetRootIdAsync(ct).ConfigureAwait(false);
+        var file = await FindChildAsync(rootId, LibraryFileName, folderOnly: false, ct).ConfigureAwait(false);
+        if (file is null) return null;
+        using var content = new MemoryStream();
+        var progress = await drive.Files.Get(file.Id).DownloadAsync(content, ct).ConfigureAwait(false);
+        if (progress.Status != DownloadStatus.Completed)
+            throw new IOException("Lecture de la bibliothèque Google Drive impossible", progress.Exception);
+        return JsonSerializer.Deserialize<Library.LibraryDocument>(content.ToArray(), Infrastructure.AppJson.Options);
+    }
+
+    public async Task WriteLibraryAsync(Library.LibraryDocument document, CancellationToken ct)
+    {
+        var rootId = await GetRootIdAsync(ct).ConfigureAwait(false);
+        var existing = await FindChildAsync(rootId, LibraryFileName, folderOnly: false, ct).ConfigureAwait(false);
+        using var content = new MemoryStream(JsonSerializer.SerializeToUtf8Bytes(document, Infrastructure.AppJson.Options));
+        ResumableUpload upload = existing is not null
+            ? drive.Files.Update(new DriveFile(), existing.Id, content, "application/json")
+            : drive.Files.Create(new DriveFile { Name = LibraryFileName, Parents = [rootId] }, content, "application/json");
+        var progress = await upload.UploadAsync(ct).ConfigureAwait(false);
+        if (progress.Status != UploadStatus.Completed)
+        {
+            if (CloudStorageFullException.IsStorageFull(progress.Exception)) throw new CloudStorageFullException(progress.Exception);
+            throw new IOException("Écriture de la bibliothèque Google Drive impossible", progress.Exception);
+        }
     }
 
     private async Task<string> GetRootIdAsync(CancellationToken ct)

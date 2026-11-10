@@ -1,5 +1,8 @@
 using System.Security.Cryptography;
+using System.Text.Json;
 using SaveGameCloud.Core.Cloud;
+using SaveGameCloud.Core.Infrastructure;
+using SaveGameCloud.Core.Library;
 
 namespace SaveGameCloud.Tests;
 
@@ -23,6 +26,20 @@ public sealed class InMemoryCloudStorage : ICloudStorage
         if (!Folders.Remove(oldName, out var folder)) return Task.FromResult(false);
         Folders[newName] = folder;
         return Task.FromResult(true);
+    }
+
+    /// <summary>Bibliothèque stockée en JSON, comme dans Drive (pour tester aussi la sérialisation).</summary>
+    public string? LibraryJson { get; set; }
+    public int LibraryWrites { get; private set; }
+
+    public Task<LibraryDocument?> ReadLibraryAsync(CancellationToken ct) =>
+        Task.FromResult(LibraryJson is null ? null : JsonSerializer.Deserialize<LibraryDocument>(LibraryJson, AppJson.Options));
+
+    public Task WriteLibraryAsync(LibraryDocument document, CancellationToken ct)
+    {
+        LibraryJson = JsonSerializer.Serialize(document, AppJson.Options);
+        LibraryWrites++;
+        return Task.CompletedTask;
     }
 
     public sealed class Folder : ICloudGameFolder

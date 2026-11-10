@@ -79,11 +79,14 @@ synchronisation, sans passer par la fenêtre de SaveGameCloud.
 
 ## 5. Jouer sur plusieurs PC
 
-Sur chaque PC, installez SaveGameCloud, connectez-vous avec **le même compte Google**, puis ajoutez le jeu avec
-**exactement le même nom** et les mêmes fichiers de sauvegarde. SaveGameCloud retrouve alors la sauvegarde dans le cloud.
+Votre **liste de jeux est aussi sauvegardée dans Google Drive**, avec l'emplacement de leurs sauvegardes. Sur un autre
+PC, installez SaveGameCloud et connectez-vous avec **le même compte Google** : tous vos jeux apparaissent, déjà configurés.
 
-Le jeu peut être installé à un endroit différent sur chaque PC (par exemple `C:\Jeux` sur l'un et `D:\Games` sur
-l'autre) : l'appli s'adapte.
+- Un jeu absent de ce PC est marqué **« Non installé sur ce PC »**. Installez-le, ou cliquez sur
+  **Localiser l'exécutable…** s'il est installé ailleurs (par exemple sur `D:\` au lieu de `C:\`). L'appli retrouve
+  ensuite ses sauvegardes au bon endroit, par rapport au dossier du jeu.
+- Ajouter, modifier ou supprimer un jeu sur un PC est répercuté sur les autres à leur prochaine ouverture.
+  Supprimer un jeu du launcher n'efface jamais ses fichiers, ni ses sauvegardes dans Google Drive.
 
 ## 6. Si quelque chose tourne mal
 
@@ -107,7 +110,8 @@ l'autre) : l'appli s'adapte.
 
 - **Sur votre PC**, SaveGameCloud range ses réglages dans `%APPDATA%\SaveGameCloud` : la liste des jeux, la
   connexion Google et les copies de secours.
-- **Dans Google Drive**, vos sauvegardes sont dans le dossier `SaveGameCloud`.
+- **Dans Google Drive**, vos sauvegardes sont dans le dossier `SaveGameCloud`, avec votre liste de jeux
+  (`.savegamecloud-library.json`).
 - **Le développeur ne reçoit aucune de vos données.** Il n'y a aucun serveur intermédiaire. Pour les détails,
   voir les [règles de confidentialité](https://er4m3d.github.io/savegamecloud/privacy.html).
 
@@ -209,7 +213,7 @@ intégré : on peut ainsi changer d'identifiant sans recompiler.
 **Chemins portables**
 - Les chemins sont enregistrés avec des jetons qui s'adaptent à chaque PC : `{GameDir}` (dossier de l'exécutable),
   `{Documents}`, `{SavedGames}`, `{AppData}`, `{LocalAppData}`, `{LocalLow}`, `{UserProfile}`, `{ProgramData}`,
-  `{PublicDocuments}`.
+  `{PublicDocuments}`, `{ProgramFiles}`, `{ProgramFilesX86}`.
 
 **Garde-fous de taille**
 - La taille n'est pas plafonnée. En revanche, une sauvegarde est jugée volumineuse à partir de **200 Mo ou
@@ -218,6 +222,18 @@ intégré : on peut ainsi changer d'identifiant sans recompiler.
   - avant un envoi, une confirmation est demandée si la sauvegarde n'a jamais été synchronisée à cette taille
     (premier envoi, ou taille plus que doublée).
 - L'erreur Drive `storageQuotaExceeded` est traduite en message clair, sans proposer de réessayer.
+
+**Bibliothèque partagée entre PC** (`Core/Library`)
+- La définition des jeux (identifiant, nom, arguments, éléments à synchroniser, exe de référence) est stockée dans
+  `SaveGameCloud/.savegamecloud-library.json` sur Drive.
+- Elle est fusionnée avec `config.json` à la connexion, puis après chaque ajout, modification ou retrait
+  (`LibraryMerger`). Pour chaque jeu, la définition la plus récente (`UpdatedUtc`) gagne.
+- Ce qui est propre à chaque PC n'est jamais écrasé : chemin réel de l'exe, état de synchro, dernière partie.
+- Les retraits sont propagés grâce à des marqueurs datés (`RemovedGames`).
+- Un jeu créé localement avec le même nom qu'un jeu de la bibliothèque y est rattaché. Son ancien identifiant est
+  conservé dans `AliasIds`, pour que les raccourcis existants continuent de fonctionner.
+- Un jeu dont l'exe est introuvable est affiché « Non installé ». Si l'exe de référence apparaît plus tard sur
+  ce PC, il est adopté automatiquement.
 
 **Lancement depuis un raccourci**
 - La commande `SaveGameCloud.exe --launch <id>` synchronise, lance le jeu puis se ferme.
@@ -228,11 +244,14 @@ intégré : on peut ainsi changer d'identifiant sans recompiler.
 
 | Élément | Rôle |
 |---|---|
-| `config.json` | Liste des jeux et état de la dernière synchronisation |
+| `config.json` | Liste des jeux (copie locale de la bibliothèque), état de synchro propre à ce PC |
 | `client_secret.json` | Identifiant OAuth importé (facultatif, prioritaire sur celui intégré) |
 | `google-token\` | Jeton de connexion Google, supprimé à la déconnexion |
 | `Backups\<jeu>\<date>\` | Copies de secours faites avant un téléchargement |
 | `logs\` | Journal mensuel |
+
+La variable d'environnement `SAVEGAMECLOUD_DATA_DIR` permet d'utiliser un autre dossier de données, pour les tests
+ou en mode portable.
 
 ## Icône
 

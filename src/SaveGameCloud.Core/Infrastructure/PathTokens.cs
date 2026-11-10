@@ -22,6 +22,8 @@ public static class PathTokens
             ("{LocalAppData}", Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData)),
             ("{AppData}", Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData)),
             ("{PublicDocuments}", Environment.GetFolderPath(Environment.SpecialFolder.CommonDocuments)),
+            ("{ProgramFilesX86}", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86)),
+            ("{ProgramFiles}", Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles)),
             ("{ProgramData}", Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData)),
             ("{UserProfile}", Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)),
         };

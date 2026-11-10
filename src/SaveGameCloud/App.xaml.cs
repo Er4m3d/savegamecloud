@@ -17,7 +17,7 @@ public partial class App : Application
         var launchIndex = Array.FindIndex(e.Args, a => a.Equals("--launch", StringComparison.OrdinalIgnoreCase));
         if (launchIndex >= 0 && launchIndex + 1 < e.Args.Length)
         {
-            var game = AppServices.Config.Load().Games.FirstOrDefault(g => g.Id == e.Args[launchIndex + 1]);
+            var game = AppServices.Config.Load().Games.FirstOrDefault(g => g.HasId(e.Args[launchIndex + 1]));
             if (game is null)
             {
                 MessageBox.Show("Ce jeu n'existe plus dans SaveGameCloud.", "SaveGameCloud", MessageBoxButton.OK, MessageBoxImage.Warning);

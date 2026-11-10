@@ -42,6 +42,7 @@ public partial class MainWindow : Window
             SetBusy("Reconnexion à Google…");
             var ok = await AppServices.Auth.TrySignInSilentlyAsync(CancellationToken.None);
             ClearBusy(ok ? "Connecté." : "Reconnexion impossible : cliquez sur « Se connecter avec Google ».");
+            if (ok) await SyncLibraryAsync();
         }
         else
         {
@@ -81,6 +82,7 @@ public partial class MainWindow : Window
             using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(3));
             await AppServices.Auth.SignInAsync(cts.Token);
             ClearBusy($"Connecté en tant que {AppServices.Auth.UserEmail}.");
+            await SyncLibraryAsync();
             return true;
         }
         catch (OperationCanceledException)
@@ -129,6 +131,40 @@ public partial class MainWindow : Window
         return await SignInInteractiveAsync();
     }
 
+    // ---------- Bibliothèque partagée entre PC ----------
+
+    /// <summary>
+    /// Fusionne la liste des jeux avec celle de Google Drive : les jeux ajoutés sur un autre PC apparaissent ici,
+    /// et ceux d'ici sont envoyés. Silencieux si l'utilisateur n'est pas connecté.
+    /// </summary>
+    private async Task SyncLibraryAsync()
+    {
+        if (AppServices.Auth.Storage is not { } cloud) return;
+        try
+        {
+            var report = await new Core.Library.LibrarySync(AppServices.Config).SyncAsync(cloud, CancellationToken.None);
+            RefreshGames();
+            if (!report.HasLocalChanges) return;
+            SetStatus(report.Summary);
+            if (report.Added.Count > 0)
+            {
+                var missing = report.Added.Where(a => !a.Installed).Select(a => "  • " + a.Name).ToList();
+                MessageBox.Show(this,
+                    $"{report.Added.Count} jeu(x) récupéré(s) depuis votre bibliothèque Google Drive, avec leurs fichiers de sauvegarde déjà configurés." +
+                    (missing.Count == 0
+                        ? ""
+                        : "\n\nNon installé(s) sur ce PC :\n" + string.Join("\n", missing) +
+                          "\n\nInstallez-les, ou utilisez « Localiser l'exécutable… » s'ils sont installés ailleurs."),
+                    "Bibliothèque récupérée", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error("Synchronisation de la bibliothèque impossible", ex);
+            SetStatus($"Bibliothèque cloud non synchronisée : {ex.Message}");
+        }
+    }
+
     // ---------- Liste des jeux ----------
 
     private void RefreshGames(string? selectId = null)
@@ -156,9 +192,15 @@ public partial class MainWindow : Window
         NoSelectionText.Visibility = game is null ? Visibility.Visible : Visibility.Collapsed;
         if (game is null) return;
 
-        DetailIcon.Source = ShellHelpers.GetIcon(game.ResolvedExePath);
+        var installed = game.IsInstalled;
+        DetailIcon.Source = ShellHelpers.GetIcon(game.ResolvedExePath) ?? GameItem.Placeholder;
+        DetailIcon.Opacity = installed ? 1 : 0.5;
         DetailName.Text = game.Name;
         DetailExe.Text = game.ResolvedExePath + (string.IsNullOrWhiteSpace(game.Arguments) ? "" : "  " + game.Arguments);
+        NotInstalledBanner.Visibility = installed ? Visibility.Collapsed : Visibility.Visible;
+        NotInstalledText.Text = $"Ce jeu n'est pas installé sur ce PC : l'exécutable est introuvable.\n{game.ResolvedExePath}";
+        // Sans le jeu, ni lancement ni synchro : les chemins de sauvegarde dépendent de son dossier.
+        PlayButton.IsEnabled = UploadButton.IsEnabled = DownloadButton.IsEnabled = ShortcutButton.IsEnabled = installed;
         DetailSync.Text = GameItem.DescribeSync(game) +
                           (game.LastPlayedUtc is { } played ? $"\nDernière partie : {played.ToLocalTime():g}" : "") +
                           (game.SyncItems.Count > 0 ? $"\nTaille locale : {SizeGuard.Measure(game)}" : "") +
@@ -171,7 +213,7 @@ public partial class MainWindow : Window
 
     // ---------- Actions ----------
 
-    private void AddGame_Click(object sender, RoutedEventArgs e)
+    private async void AddGame_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new OpenFileDialog
         {
@@ -187,6 +229,25 @@ public partial class MainWindow : Window
         AppServices.Config.SaveGame(editor.Result);
         RefreshGames(editor.Result.Id);
         SetStatus($"« {editor.Result.Name} » ajouté.");
+        await SyncLibraryAsync();
+    }
+
+    /// <summary>Indique où est installé le jeu sur ce PC (ne change que ce PC, pas la bibliothèque).</summary>
+    private void Locate_Click(object sender, RoutedEventArgs e)
+    {
+        if (SelectedGame is not { } game) return;
+        var expectedName = Path.GetFileName(game.ResolvedExePath);
+        var dialog = new OpenFileDialog
+        {
+            Title = $"Où est installé « {game.Name} » ? Choisissez {expectedName}",
+            Filter = "Programmes (*.exe;*.bat;*.cmd;*.lnk)|*.exe;*.bat;*.cmd;*.lnk|Tous les fichiers (*.*)|*.*",
+            FileName = expectedName,
+            DereferenceLinks = true,
+        };
+        if (dialog.ShowDialog(this) != true) return;
+        AppServices.Config.UpdateGame(game.Id, g => g.ExePath = dialog.FileName);
+        RefreshGames(game.Id);
+        SetStatus($"« {game.Name} » : exécutable trouvé.");
     }
 
     private async void EditGame_Click(object sender, RoutedEventArgs e)
@@ -220,16 +281,19 @@ public partial class MainWindow : Window
         AppServices.Config.SaveGame(updated);
         RefreshGames(updated.Id);
         SetStatus($"« {updated.Name} » enregistré.");
+        await SyncLibraryAsync();
     }
 
-    private void DeleteGame_Click(object sender, RoutedEventArgs e)
+    private async void DeleteGame_Click(object sender, RoutedEventArgs e)
     {
         if (SelectedGame is not { } game) return;
-        if (MessageBox.Show(this, $"Retirer « {game.Name} » du launcher ?\n\nAucun fichier n'est supprimé : ni le jeu, ni les sauvegardes locales, ni le dossier Google Drive.",
+        if (MessageBox.Show(this, $"Retirer « {game.Name} » du launcher ?\n\nIl sera aussi retiré de vos autres PC. Aucun fichier n'est supprimé : " +
+                                  "ni le jeu, ni les sauvegardes locales, ni le dossier Google Drive.",
                 "Supprimer", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
         AppServices.Config.RemoveGame(game.Id);
         RefreshGames();
         SetStatus($"« {game.Name} » retiré.");
+        await SyncLibraryAsync();
     }
 
     private void Shortcut_Click(object sender, RoutedEventArgs e)
@@ -250,6 +314,13 @@ public partial class MainWindow : Window
     private async void Play_Click(object sender, RoutedEventArgs e)
     {
         if (SelectedGame is not { } game || _busy) return;
+        if (!game.IsInstalled)
+        {
+            if (MessageBox.Show(this, $"« {game.Name} » n'est pas installé sur ce PC.\n\nS'il est installé ailleurs, voulez-vous indiquer son exécutable ?",
+                    "Jeu non installé", MessageBoxButton.YesNo, MessageBoxImage.Information) == MessageBoxResult.Yes)
+                Locate_Click(sender, e);
+            return;
+        }
         if (game.SyncItems.Count == 0 &&
             MessageBox.Show(this, "Aucun fichier de sauvegarde n'est configuré pour ce jeu : rien ne sera synchronisé.\n\nLancer quand même ?",
                 "SaveGameCloud", MessageBoxButton.YesNo, MessageBoxImage.Question) != MessageBoxResult.Yes) return;
@@ -401,10 +472,25 @@ public partial class MainWindow : Window
 public sealed class GameItem(GameEntry game)
 {
     public GameEntry Game { get; } = game;
+    /// <summary>Icône de l'appli, affichée en grisé pour un jeu non installé.</summary>
+    public static readonly ImageSource Placeholder = LoadPlaceholder();
+
+    private readonly bool _installed = game.IsInstalled;
+
     public string Name => Game.Name;
-    public ImageSource? Icon => ShellHelpers.GetIcon(Game.ResolvedExePath);
-    public string Subtitle => DescribeSync(Game);
-    public Brush SubtitleBrush => (Brush)Application.Current.FindResource(Game.LastSyncFailed ? "DangerBrush" : "SubtleBrush");
+    public ImageSource? Icon => ShellHelpers.GetIcon(Game.ResolvedExePath) ?? Placeholder;
+    public double IconOpacity => _installed ? 1 : 0.45;
+    public string Subtitle => _installed ? DescribeSync(Game) : "Non installé sur ce PC";
+
+    public Brush SubtitleBrush => (Brush)Application.Current.FindResource(
+        !_installed ? "WarningBrush" : Game.LastSyncFailed ? "DangerBrush" : "SubtleBrush");
+
+    private static ImageSource LoadPlaceholder()
+    {
+        var image = new System.Windows.Media.Imaging.BitmapImage(new Uri("pack://application:,,,/Assets/app-256.png"));
+        image.Freeze();
+        return image;
+    }
 
     public static string DescribeSync(GameEntry game) =>
         game.LastSyncUtc is { } when ? $"{game.LastSyncMessage} — {when.ToLocalTime():g}" : "Jamais synchronisé";

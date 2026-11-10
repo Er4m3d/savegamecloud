@@ -9,12 +9,16 @@ public static class AppPaths
     {
         get
         {
-            var dir = _dataDirOverride ?? Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SaveGameCloud");
+            // SAVEGAMECLOUD_DATA_DIR : dossier de données alternatif (tests, mode portable).
+            var dir = _dataDirOverride
+                      ?? NullIfEmpty(Environment.GetEnvironmentVariable("SAVEGAMECLOUD_DATA_DIR"))
+                      ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "SaveGameCloud");
             Directory.CreateDirectory(dir);
             return dir;
         }
     }
+
+    private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     /// <summary>Utilisé par les tests pour isoler les données.</summary>
     public static void OverrideDataDir(string dir) => _dataDirOverride = dir;

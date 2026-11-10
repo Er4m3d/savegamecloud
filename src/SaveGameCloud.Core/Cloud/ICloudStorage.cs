@@ -18,6 +18,11 @@ public interface ICloudStorage
 
     /// <summary>Renomme le dossier cloud. Retourne false si l'ancien n'existe pas ; lève une exception si le nouveau existe déjà.</summary>
     Task<bool> RenameGameFolderAsync(string oldName, string newName, CancellationToken ct);
+
+    /// <summary>Bibliothèque de jeux partagée entre les PC ; null si elle n'a jamais été créée.</summary>
+    Task<Library.LibraryDocument?> ReadLibraryAsync(CancellationToken ct);
+
+    Task WriteLibraryAsync(Library.LibraryDocument document, CancellationToken ct);
 }
 
 public interface ICloudGameFolder

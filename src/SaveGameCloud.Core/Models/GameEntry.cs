@@ -26,8 +26,23 @@ public sealed class GameEntry
     /// <summary>Taille totale des éléments lors de la dernière synchro réussie (garde-fou de taille).</summary>
     public long? LastSyncedBytes { get; set; }
 
+    /// <summary>
+    /// Date de la dernière modification de la définition partagée du jeu (nom, arguments, éléments).
+    /// Null tant que le jeu n'a jamais été partagé dans la bibliothèque cloud.
+    /// </summary>
+    public DateTime? UpdatedUtc { get; set; }
+
+    /// <summary>Anciens identifiants de ce jeu (après fusion avec la bibliothèque), pour les raccourcis existants.</summary>
+    public List<string> AliasIds { get; set; } = new();
+
     [JsonIgnore]
     public string ResolvedExePath => PathTokens.Expand(ExePath, null);
+
+    /// <summary>L'exécutable existe-t-il sur ce PC ?</summary>
+    [JsonIgnore]
+    public bool IsInstalled => !string.IsNullOrWhiteSpace(ExePath) && File.Exists(ResolvedExePath);
+
+    public bool HasId(string id) => Id == id || AliasIds.Contains(id);
 
     [JsonIgnore]
     public string? GameDirectory
@@ -45,6 +60,7 @@ public sealed class GameEntry
     {
         var copy = (GameEntry)MemberwiseClone();
         copy.SyncItems = SyncItems.Select(i => i.Clone()).ToList();
+        copy.AliasIds = AliasIds.ToList();
         return copy;
     }
 }
@@ -75,4 +91,13 @@ public sealed class AppConfig
 
     /// <summary>Nombre de sauvegardes de secours conservées par jeu avant un téléchargement.</summary>
     public int MaxBackupsPerGame { get; set; } = 10;
+
+    /// <summary>Jeux retirés du launcher, pour propager le retrait aux autres PC.</summary>
+    public List<RemovedGame> RemovedGames { get; set; } = new();
+}
+
+public sealed class RemovedGame
+{
+    public string Id { get; set; } = "";
+    public DateTime RemovedUtc { get; set; }
 }

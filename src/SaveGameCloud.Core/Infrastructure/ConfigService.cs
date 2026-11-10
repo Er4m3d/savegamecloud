@@ -1,5 +1,4 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using SaveGameCloud.Core.Models;
 
 namespace SaveGameCloud.Core.Infrastructure;
@@ -10,11 +9,7 @@ namespace SaveGameCloud.Core.Infrastructure;
 /// </summary>
 public sealed class ConfigService
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true,
-        Converters = { new JsonStringEnumConverter() },
-    };
+    private static JsonSerializerOptions JsonOptions => AppJson.Options;
 
     private readonly string _file;
 
@@ -39,19 +34,32 @@ public sealed class ConfigService
     public void UpdateGame(string gameId, Action<GameEntry> change) =>
         Update(c =>
         {
-            var game = c.Games.FirstOrDefault(g => g.Id == gameId);
+            var game = c.Games.FirstOrDefault(g => g.HasId(gameId));
             if (game is not null) change(game);
         });
 
+    /// <summary>Ajoute ou modifie un jeu : sa définition partagée est datée pour la bibliothèque cloud.</summary>
     public void SaveGame(GameEntry game) =>
         Update(c =>
         {
-            var index = c.Games.FindIndex(g => g.Id == game.Id);
+            game.UpdatedUtc = DateTime.UtcNow;
+            var index = c.Games.FindIndex(g => g.HasId(game.Id));
             if (index >= 0) c.Games[index] = game;
             else c.Games.Add(game);
         });
 
-    public void RemoveGame(string gameId) => Update(c => c.Games.RemoveAll(g => g.Id == gameId));
+    /// <summary>Retire un jeu et garde une trace du retrait, pour le propager aux autres PC.</summary>
+    public void RemoveGame(string gameId) =>
+        Update(c =>
+        {
+            var removed = c.Games.Where(g => g.HasId(gameId)).ToList();
+            c.Games.RemoveAll(g => g.HasId(gameId));
+            foreach (var game in removed)
+            {
+                c.RemovedGames.RemoveAll(r => r.Id == game.Id);
+                c.RemovedGames.Add(new RemovedGame { Id = game.Id, RemovedUtc = DateTime.UtcNow });
+            }
+        });
 
     private AppConfig LoadUnlocked()
     {
