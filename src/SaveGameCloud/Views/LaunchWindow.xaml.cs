@@ -18,6 +18,8 @@ public partial class LaunchWindow : Window
         Title = $"{game.Name} — SaveGameCloud";
         GameName.Text = game.Name;
         GameIcon.Source = ShellHelpers.GetIcon(game.ResolvedExePath);
+        // Lancé depuis le raccourci d'un jeu : la barre des tâches montre l'icône du jeu.
+        if (GameIcon.Source is not null) Icon = GameIcon.Source;
         Loaded += OnLoaded;
         Closing += (_, e) =>
         {
